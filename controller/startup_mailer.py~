@@ -54,7 +54,9 @@ my_ip_b = 'Your %s ip is %s' % (ip_type_b, ipaddr_b)
 arg = 'ip a'
 p = subprocess.Popen(arg, shell=True, stdout=subprocess.PIPE)
 data = p.communicate()
-ipdata = str(data[0])
+ipdata = "\nIP List\n"
+ipdata += "=======\n"
+ipdata += str(data[0])
 
 msg = MIMEText(my_ip_a + "\n\n" + my_ip_b + "\n\n" + ipdata)
 msg['To'] = to
