@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+# Called by provider when negotiating ppp startup
+#
+# These commands are done in attach_gprs.py, so commented out here.
+#OK '\dAT+CGDCONT=1,"","fast.t-mobile.com"' \
+#OK '\dAT+CGACT=1,1' \
+#OK '\dAT+CGREG?' \
+#OK '\dAT+COPS?' \
+#OK '\dAT+CSQ' \
+#OK '\dAT+CGATT=1' \
+#OK '\dAT+CMEE=1' \
+#OK '\dAT+CPIN?' \
+#OK '\dAT+CGDCONT?' \
+#OK '\dATD*99***1#' \
+#CONNECT '\d\c'
+sleep 2
+
+exec /usr/sbin/chat -v \
+ABORT 'BUSY' \
+ABORT 'NO CARRIER' \
+ABORT 'NO DIALTONE' \
+REPORT CONNECT \
+# Wake up the modem
+ECHO ON \
+TIMEOUT 30 \
+'' '\dATZ' \
+# Enter data state
+OK '\dAT+CGDATA="PPP",2' \
+SAY "requesting data connection"
+CONNECT ''
+SAY "\nConnected"

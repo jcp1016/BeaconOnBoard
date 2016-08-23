@@ -65,16 +65,16 @@ if __name__ == '__main__':
     SendCommand("AT+CSQ",1)
 
     # Define a PDP context with IP connection, ID is 1
-    SendCommand('AT+CGDCONT=1,"","fast.t-mobile.com"',2);
+    SendCommand('AT+CGDCONT=1,"IP","fast.t-mobile.com"',2);
 
-    # Attach the GPRS
+    # Attach to GPRS network
     SendCommand("AT+CGATT=1",2)
 
     # Activate the PDP context
     SendCommand("AT+CGACT=1,1",2)
 
     # Query the active PDP contexts
-    SendCommand("AT+CGACT?",2)
+    SendCommand("AT+CGACT?", 1)
 
     # Connect to ISP
     SendCommand("ATD*99***1#",5)
