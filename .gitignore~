@@ -1,3 +1,4 @@
-.*~
+./*~
 ppplog.txt
 data
+./logs/*

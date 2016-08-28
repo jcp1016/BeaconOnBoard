@@ -30,6 +30,7 @@ OK		'\dATZ' \
 #OK		'\dAT+CGACT=0,1' \
 OK-AT-OK	'\dAT+CGATT=0' \
 OK-AT-OK	'\dAT+CPIN?' \
+OK		'\dAT+CGPIN="8811"' \
 OK-AT-OK	'\dAT+CGREG?' \
 OK-AT-OK	'\dAT+CGDCONT=1,"IP","fast.t-mobile.com"' \
 OK		'\dAT+CGDCONT?' \

@@ -23,7 +23,7 @@ mru 542
 passive
 nodetach
 record "/home/root/BeaconOnBoard/logs/ppp-log.txt"
-#silent
+silent
 user "janet.prumachuk@mac.com"
 password "abate123"
 connect "/etc/ppp/peers/tmobile.chat"

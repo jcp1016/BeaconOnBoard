@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# Called by provider when negotiating ppp startup
+#
+sleep 2
+ 
+exec /usr/sbin/chat -v \
+ABORT "BUSY" \
+ABORT "NO CARRIER" \
+ABORT "ERROR" \
+ABORT "NO DIALTONE" \
+REPORT CONNECT 

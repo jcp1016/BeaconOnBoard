@@ -1,0 +1,5 @@
+mru 542
+passive
+nodetach
+kdebug 7
+record "/home/root/BeaconOnBoard/logs/ppp-log.txt"

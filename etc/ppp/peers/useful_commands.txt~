@@ -1,17 +1,10 @@
 # View the active serial ports 
 ip a
 
-# Start the GPRS modem (*** Pick up from here ***)
+# Start the GPRS modem
 Connect serial and serial1 ports to computer
 Turn on modem (switch)
-Run test2 Arduino sketch to activate GPRS connection with peer
-Open serial monitor in Arduino and enter g
-If all is OK:
-   Disconnect the Serial1 port from the computer
-   If modem disconnects, need to rerun the Arduino sketch
-   Start pppd (pppd call provider) from a terminal window
-
-TODO:  convert the Arduino sketch into a python script and run from device
+pppd call provider
 
 # Read the logs
 journalctl -xf | grep -e "\(pppd\|chat\)"

@@ -80,9 +80,9 @@ if __name__ == '__main__':
     SendCommand("AT+CGACT?",1)
 
     # Connect to ISP
-    SendCommand("ATD*99***1#",1)
+    SendCommand("ATD*99***1#",5)
     #SendCommand('AT+CGDATA="PPP",1',2)
 
-    SendCommand("/d/c",1)
+    SendCommand("/d/c",0)
 
     print "Now run pppd call provider"

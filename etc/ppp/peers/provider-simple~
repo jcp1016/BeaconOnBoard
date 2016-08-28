@@ -17,14 +17,13 @@ novj
 novjccomp
 replacedefaultroute
 persist
-debug
-dump
+#debug
+#dump
 mru 542
 passive
 nodetach
-record "/home/root/BeaconOnBoard/logs/ppp-log.txt"
-#silent
+#record "/home/root/BeaconOnBoard/logs/ppp-log.txt"
 user "janet.prumachuk@mac.com"
 password "abate123"
-connect "/etc/ppp/peers/tmobile.chat"
+connect "/etc/ppp/peers/simple.chat"
 disconnect "/etc/ppp/peers/disconnect.chat"
