@@ -1,7 +1,8 @@
 # /etc/ppp/peers/provider
 #
 /dev/ttyMFD1
-19200
+#19200
+115200
 crtscts
 lock
 hide-password
