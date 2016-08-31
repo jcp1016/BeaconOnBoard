@@ -7,6 +7,7 @@ import mraa
 import boto3
 from boto3.dynamodb.conditions import Key,Attr
 
+# change the path to the absolute path to the utils directory
 sys.path.append('./utils')
 import aws
 import traceback
