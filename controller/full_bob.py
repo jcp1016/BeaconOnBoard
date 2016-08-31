@@ -29,8 +29,10 @@ import pyupm_biss0001 as upmMotion
 # Topic_prev = "arn:aws:sns:us-east-1:480370410475:"
 Topic = None
 Dev_ID = "BOB001"
+tableName = "Car_situation"
 S3_key = Dev_ID+'/inside.png'
 S3_bucket = "bobotry"
+danger_start = time.time()
 danger = Queue()
 
 stop = Queue()
@@ -44,7 +46,7 @@ camera_motion_detection = Queue()
 
 PIR_on = Queue()
 
-interval = 180 # 3min
+interval = 20 # 3min
 
 message_format = r'''{
         "default": "Content",
@@ -92,6 +94,7 @@ def check_temperature(tempSensor):
 		if temp_safe:
 			if time.time()-safe_start>safe_threshold:
 				temp_danger = 0
+				danger_start = time.time()
 				print "safe"
 		time.sleep(0.5)
 
@@ -108,14 +111,15 @@ def get_temp(tempSensor):
 	print R
 	R=100000.0*R
 	temperature = 1.0/(math.log(R/100000.0)/4275+1/298.15)-273.15
-	return round(temperature,2)
+	return round(temperature,1)
 
 def PIR_motion(motion_sensor):
 	detected = 0
 	total = 0
 	while stop.empty():
 		if motion_sensor.value():
-			i = i+1
+			detected = detected+1
+			print "detected: "+ str(detected)
 		else:
 			print "nothing"
 		total = total+1
@@ -124,7 +128,7 @@ def PIR_motion(motion_sensor):
 			if PIR_motion_detection.empty():
 				PIR_motion_detection.put(1)
 				return
-		else if total>=100:
+		elif total>=100:
 			return
 	return
 
@@ -157,8 +161,8 @@ def somethingHasMoved(frame, threshold):
         return False
 
 def camera_motion(S3_client_2):
-	camera = cv2.VideoCapture(0)
-	s, img = camera.read()
+	cam = cv2.VideoCapture(0)
+	s, img = cam.read()
 	num_moved = 0
 	started = time.time()
 	# Read three images first:
@@ -166,38 +170,40 @@ def camera_motion(S3_client_2):
 	t = cv2.cvtColor(cam.read()[1], cv2.COLOR_RGB2GRAY)
 	t_plus = cv2.cvtColor(cam.read()[1], cv2.COLOR_RGB2GRAY)
 	total = 0
-
+	print "=============camera started=============="
 	while stop.empty():
-	    instant = time.time()
-	    time.sleep(0.01) 
-	    frame = diffImg(t_minus, t, t_plus)
-	    #cv2.imshow(winName, frame)
-	    # Read next image
-	    t_minus = t
-	    t = t_plus
-	    t_plus = cv2.cvtColor(cam.read()[1], cv2.COLOR_RGB2GRAY)
-	    
-	    if instant > started +5:
-	    	if somethingHasMoved(frame, 5):#Wait 5 second after the webcam start for luminosity adjusting etc..
-	      		num_moved=num_moved+1
-	        	print datetime.now().strftime("%b %d, %H:%M:%S"), "Something is moving !"
+		instant = time.time()
+		time.sleep(0.01) 
+		frame = diffImg(t_minus, t, t_plus)
+		#cv2.imshow(winName, frame)
+		# Read next image
+		t_minus = t
+		t = t_plus
+		t_plus = cv2.cvtColor(cam.read()[1], cv2.COLOR_RGB2GRAY)
+
+		if instant > started +5:
+			if somethingHasMoved(frame, 5):#Wait 5 second after the webcam start for luminosity adjusting etc..
+				num_moved=num_moved+1
+				print datetime.now().strftime("%b %d, %H:%M:%S"), "Something is moving !"
 	    # else:
 	    #  	num_moved = 0
-	    	total = total+1
-		    if num_moved>=20:
-		     	s_up, img_up = camera.read()
-		     	cv2.imwrite('test.png',img_up)
-		     	S3_client_2.upload_file('test.png', S3_bucket, S3_key)
-		     	print "file uploaded"
-		     	if camera_motion_detection.empty():
-		     		camera_motion_detection.put(1)
-		     	return
-		    else if total>=200:
-		    	return
+			total = total+1
+			if num_moved>=20:
+				s_up, img_up = cam.read()
+				cv2.imwrite('test.png',img_up)
+				S3_client_2.upload_file('test.png', S3_bucket, S3_key)
+				print "file uploaded"
+				if camera_motion_detection.empty():
+					camera_motion_detection.put(1)
+				return
+			elif total>=200:
+				return
 	return
 
 def main():
-	myResource = aws.getResource('sns','us-east-1')
+	warn_send = 0
+	myResource = aws.getResource('dynamodb','us-east-1')
+	myTable = myResource.Table(tableName)
 	client = aws.getClient('sns','us-east-1')
 	S3_client = aws.getClient('s3','us-east-1')
 	ddb_client = aws.getClient('dynamodb', 'us-east-1')
@@ -250,25 +256,43 @@ def main():
 					threads.append(t2)
 					threads[1].start()
 					PIR_on.put(1)
+
 				if (not PIR_motion_detection.empty()) and camera_on.empty():
 					threads[1].join(1)
 					t3 = threading.Thread(target = camera_motion, args=(S3_client,))
 					t3.daemon=True
-					threads.append(t3)
+					threads[1]=(t3)
 					threads[-1].start()
 					camera_on.put(1)
 				if (not PIR_motion_detection.empty()) and (not camera_motion_detection.empty()):
-					threads[1].join(1)
+					if ( not warn_send):
+						threads[1].join(1)
+						del threads[1]
+						if(Topic!=None):
+							message = "Baby in the Car!!! Temperature: "+ str(get_temp(tempSensor))+"\u2103"+"!!!"
+							try:
+								print "=================="
+								
+								print get_temp(tempSensor)
+								danger_start_time = int(danger_start*1000)
+								print danger_start_time
+								response = myTable.put_item(
+									Item={
+									'deviceID': Dev_ID,
+									'start_time': danger_start_time,
+									'temperature': int(get_temp(tempSensor)*10)
+									}
+								)
+							except Exception as e_db:
+								print str(e_db)
+								stop.put(1)
+							send_message = message_format.replace('Content', message)
+							pub = client.publish( TopicArn = Topic, Message =  send_message, MessageStructure='json')
 
-					# publish the emergency notification to this topic
-					if(Topic!=None):
-						message = "Baby in the Car!!! Temperature: "+ str(get_temp(tempSensor))+"\u2103"+"!!!"
-						send_message = message_format.replace('Content', message)
-						pub = client.publish( TopicArn = Topic, Message =  send_message, MessageStructure='json')
-				time_prev = time.time()
+						warn_send = 1
+				#time_prev = time.time()
 
 			# how about the system status after the publishing???
-
 			# if not deactivate.empty():
 			# 	danger.get()
 			# 	deactivate.get()
@@ -283,4 +307,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
