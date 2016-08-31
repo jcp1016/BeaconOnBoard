@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # Does the SIM card match the provider?
     #SendCommand("AT+COPS=1,2,310260,0",1)
 
-    #SendCommand("AT+COPS?",1)
+    SendCommand("AT+COPS?",1)
 
     # Check the line quality
     SendCommand("AT+CSQ",1)
@@ -82,7 +82,5 @@ if __name__ == '__main__':
     # Connect to ISP
     SendCommand("ATD*99***1#",1)
     #SendCommand('AT+CGDATA="PPP",1',2)
-
-    SendCommand("/d/c",1)
 
     print "Now run pppd call provider"
