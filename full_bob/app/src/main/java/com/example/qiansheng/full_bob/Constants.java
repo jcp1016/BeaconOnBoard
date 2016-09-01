@@ -12,5 +12,6 @@ public class Constants {
     public static final String BIND_TABLE_NAME = "Account_device";
     public static final String ENDPOINT_TABLE_NAME = "Device_endpoint";
     public static final String INSIDE_TABLE_NAME = "Car_situation";
+    public static final String DEVICE_ACTION_TABLE_NAME = "device_action";
 
 }

@@ -27,6 +27,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.sns.AmazonSNS;
+import com.example.qiansheng.full_bob.DynamoDB_device_action.Device_act;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -70,7 +71,8 @@ public class ImagePart extends Activity {
     private TextView text_elapsed =null;
     private Handler mHandler = new Handler();
     public static String device_string=null;
-
+    private String button_text = "Deactivate";
+    private int current_status = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -90,6 +92,27 @@ public class ImagePart extends Activity {
             public void onClick(View v) {
                 ImageView image = (ImageView) findViewById(R.id.imageView2);
                 new S3Task(image).execute();
+
+            }
+        });
+        final Button button_change_status = (Button) findViewById(R.id.button_deactivate);
+        assert button_change_status != null;
+        button_change_status.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                button_text = button_change_status.getText().toString();
+                if(!Device_ID.equals("first")) {
+                    Device_act dev_act = new Device_act();
+                    if(button_text.equals("Deactivate")) {
+                        dev_act.setActive(0);
+                    }else{
+                        dev_act.setActive(1);
+                    }
+                    dev_act.setDevNum(Device_ID);
+                    new DynamoDBManagerTask().execute(dev_act);
+                    System.out.println("current_status");
+                    System.out.println(current_status);
+                }
 
             }
         });
@@ -232,6 +255,28 @@ public class ImagePart extends Activity {
 //            System.out.println(account_dev);
 //        }
 //    }
+    private class DynamoDBManagerTask extends
+            AsyncTask<Device_act, Void, String> {
+
+        protected String doInBackground(
+                Device_act... Device_acts) {
+            String DevNum = Device_acts[0].getDevNum();
+            int active = Device_acts[0].getActive();
+            DynamoDB_device_action.insertBind(DevNum,active);
+            current_status = DynamoDB_device_action.getAccount(DevNum).getActive();
+            String result = "change device status";
+            return result;
+        }
+        protected void onPostExecute(String result) {
+            Button button_change_status = (Button) findViewById(R.id.button_deactivate);
+            System.out.println(result);
+            if(current_status==0){
+                button_change_status.setText("Activate");
+            }else{
+                button_change_status.setText("Deactivate");
+            }
+        }
+    }
     private class S3Task extends
             AsyncTask<Void, Void, Boolean> {
         private final WeakReference<ImageView> imageViewReference;
@@ -267,6 +312,8 @@ public class ImagePart extends Activity {
                 System.out.println(Device_ID);
                 correctOne2 = DynamoDB_car_situation.getAccount(Device_ID);
                 start_time = correctOne2.getStart_time();
+                System.out.println(prev_start_time);
+                System.out.println("prev_start_time");
                 temperature = correctOne2.getTemperature();
                 if(start_time!=prev_start_time){
                     prev_start_time=start_time;
