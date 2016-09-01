@@ -1,6 +1,3 @@
-# =========================
-# Creator: Sheng Qian
-# =========================
 import cv2
 from datetime import datetime
 import numpy
@@ -25,15 +22,15 @@ from Queue import *
 import math
 import pyupm_biss0001 as upmMotion
 
-# some global values 
+# some global values
 # Topic_prev = "arn:aws:sns:us-east-1:480370410475:"
 Topic = None
 Dev_ID = "BOB001"
 tableName = "Car_situation"
+device_act_table_name = "device_action"
 S3_key = Dev_ID+'/inside.png'
 S3_bucket = "bobotry"
-
-danger_start = time.time()
+danger_start_queue = Queue()
 danger = Queue()
 
 stop = Queue()
@@ -45,15 +42,33 @@ camera_on = Queue()
 PIR_motion_detection = Queue()
 camera_motion_detection = Queue()
 
+active_queue = Queue()
+
 PIR_on = Queue()
 
 interval = 20 # 3min
 
-#message_format = r'''{
-#        "default": "Content",
-#        "sms": "Content",
-#        "GCM": "{ \"data\": { \"message\": \"Content\" } }"
-#        }'''
+message_format = r'''{
+        "default": "Content",
+        "sms": "Content",
+        "GCM": "{ \"data\": { \"message\": \"Content\" } }"
+        }'''
+
+def check_active(active_table):
+	while stop.empty():
+		dev_act_response = active_table.get_item(
+		Key = {
+			"DevNum": Dev_ID
+		})
+		if("Item" in dev_act_response):
+			if dev_act_response["Item"]["active"]==1:
+				if active_queue.empty():
+					active_queue.put(1)
+			else:
+				if not active_queue.empty():
+					active_queue.queue.clear()
+		time.sleep(1)
+	return
 
 def check_temperature(tempSensor):
 	i =0
@@ -64,6 +79,13 @@ def check_temperature(tempSensor):
 	temp_safe = 0
 	temp_danger = 0
 	while stop.empty():
+		if(active_queue.empty()):
+			print "=======reset========="
+			danger_start = time.time()
+			safe_start = time.time()
+			temp_safe = 0
+			temp_danger = 0
+			time.sleep(1)
 		R=0
 		R = tempSensor.read()
 		time.sleep(0.01)
@@ -75,7 +97,7 @@ def check_temperature(tempSensor):
 
 		# if danger status happens, then only when the situation is safe for a time period, then the system thinks the danger status is solved
 
-		if temperature>28:
+		if temperature>24:
 			if temp_danger ==0:
 				danger_start = time.time()
 			temp_danger = 1
@@ -90,6 +112,8 @@ def check_temperature(tempSensor):
 		if temp_danger:
 			if time.time()-danger_start>danger_threshold:
 				if danger.empty():
+					danger_start_queue.queue.clear()
+					danger_start_queue.put(danger_start)
 					danger.put(1)
 					print "danger put: "+str(temperature)
 		if temp_safe:
@@ -117,8 +141,9 @@ def get_temp(tempSensor):
 def PIR_motion(motion_sensor):
 	detected = 0
 	total = 0
-	while stop.empty():
+	while stop.empty() and not active_queue.empty():
 		if motion_sensor.value():
+		#if motion_sensor.read():
 			detected = detected+1
 			print "detected: "+ str(detected)
 		else:
@@ -172,7 +197,7 @@ def camera_motion(S3_client_2):
 	t_plus = cv2.cvtColor(cam.read()[1], cv2.COLOR_RGB2GRAY)
 	total = 0
 	print "=============camera started=============="
-	while stop.empty():
+	while stop.empty() and not active_queue.empty():
 		instant = time.time()
 		time.sleep(0.01) 
 		frame = diffImg(t_minus, t, t_plus)
@@ -204,7 +229,21 @@ def camera_motion(S3_client_2):
 def main():
 	warn_send = 0
 	myResource = aws.getResource('dynamodb','us-east-1')
+
 	myTable = myResource.Table(tableName)
+	device_action_table = myResource.Table(device_act_table_name)
+	# dev_act_response = device_action_table.get_item(
+	# 	Key = {
+	# 		"DevNum": Dev_ID
+	# 	})
+
+	# automatically set the device active when start up
+	dev_act_response = device_action_table.put_item(
+		Item={
+				'DevNum': Dev_ID,
+				'active': 1
+			}
+	)
 	client = aws.getClient('sns','us-east-1')
 	S3_client = aws.getClient('s3','us-east-1')
 	ddb_client = aws.getClient('dynamodb', 'us-east-1')
@@ -232,15 +271,18 @@ def main():
 		print S3_response
 	
 	tempSensor = mraa.Aio(2)
-	#switch_pin_number=8
-	#switch = mraa.Gpio(switch_pin_number)
-	#switch.dir(mraa.DIR_IN)
+	# switch_pin_number=8
+	# switch = mraa.Gpio(switch_pin_number)
+	# switch.dir(mraa.DIR_IN)
 	myMotion = upmMotion.BISS0001(8)
 	
 
 	time_prev=0
 	threads=[]
 	try:
+		check_active_thread = threading.Thread(target=check_active, args=(device_action_table,))
+		check_active.daemon=True
+		check_active_thread.start()
 		t1= threading.Thread(target=check_temperature, args=(tempSensor,))
 		t1.daemon=True
 		threads.append(t1)
@@ -250,55 +292,74 @@ def main():
 		for ele in threads:
 			ele.start()
 		while stop.empty():
-			if not danger.empty() and time.time() - time_prev > interval:
-				if PIR_on.empty():
-					t2 = threading.Thread(target = PIR_motion, args=(myMotion,))
-					t2.daemon=True
-					threads.append(t2)
-					threads[1].start()
-					PIR_on.put(1)
+			if not active_queue.empty():
+				print "=======started========"
+				if not danger.empty() and time.time() - time_prev > interval:
+					if PIR_on.empty():
+						#t2 = threading.Thread(target = PIR_motion, args=(switch,))
+						t2 = threading.Thread(target = PIR_motion, args=(myMotion,))
+						t2.daemon=True
+						threads.append(t2)
+						threads[1].start()
+						PIR_on.put(1)
 
-				if (not PIR_motion_detection.empty()) and camera_on.empty():
-					threads[1].join(1)
-					t3 = threading.Thread(target = camera_motion, args=(S3_client,))
-					t3.daemon=True
-					threads[1]=(t3)
-					threads[-1].start()
-					camera_on.put(1)
-				if (not PIR_motion_detection.empty()) and (not camera_motion_detection.empty()):
-					if ( not warn_send):
+					if (not PIR_motion_detection.empty()) and camera_on.empty():
 						threads[1].join(1)
-						del threads[1]
-						if(Topic!=None):
-							message = "Baby in the Car!!! Temperature: "+ str(get_temp(tempSensor))+"\u2103"+"!!!"
-							try:
-								print "=================="
-								
-								print get_temp(tempSensor)
-								danger_start_time = int(danger_start*1000)
-								print danger_start_time
-								response = myTable.put_item(
-									Item={
-									'deviceID': Dev_ID,
-									'start_time': danger_start_time,
-									'temperature': int(get_temp(tempSensor)*10)
-									}
-								)
-							except Exception as e_db:
-								print str(e_db)
-								stop.put(1)
-							send_message = message_format.replace('Content', message)
-							pub = client.publish( TopicArn = Topic, Message =  send_message, MessageStructure='json')
+						t3 = threading.Thread(target = camera_motion, args=(S3_client,))
+						t3.daemon=True
+						threads[1]=(t3)
+						threads[-1].start()
+						camera_on.put(1)
+					if (not PIR_motion_detection.empty()) and (not camera_motion_detection.empty()):
+						if ( not warn_send):
+							print "gonna send the temperature: "+str(warn_send)
+							threads[1].join(1)
+							del threads[1]
+							if(Topic!=None):
+								message = "Baby in the Car!!! Temperature: "+ str(get_temp(tempSensor))+"\u2103"+"!!!"
+								try:
+									print "=================="
+									
+									print get_temp(tempSensor)
+									if(not danger_start_queue.empty()):
+										danger_start = danger_start_queue.get()
+										danger_start_time = int(danger_start*1000)
+										print danger_start_time
+										response = myTable.put_item(
+											Item={
+											'deviceID': Dev_ID,
+											'start_time': danger_start_time,
+											'temperature': int(get_temp(tempSensor)*10)
+											}
+										)
+								except Exception as e_db:
+									print str(e_db)
+									stop.put(1)
+								send_message = message_format.replace('Content', message)
+								pub = client.publish( TopicArn = Topic, Message =  send_message, MessageStructure='json')
 
-						warn_send = 1
-				#time_prev = time.time()
+							warn_send = 1
+					#time_prev = time.time()
 
-			# how about the system status after the publishing???
-			# if not deactivate.empty():
-			# 	danger.get()
-			# 	deactivate.get()
+				# how about the system status after the publishing???
+				# if not deactivate.empty():
+				# 	danger.get()
+				# 	deactivate.get()
+			else:
+				print "=======stopped========"
+				for ele in threads[1:]:
+					ele.join(2)
+				threads = [threads[0]]
+				danger.queue.clear()
+				camera_on.queue.clear()
+				PIR_on.queue.clear()
+				PIR_motion_detection.queue.clear()
+				camera_motion_detection.queue.clear()
+				warn_send=0
+			time.sleep(0.5)
 	except KeyboardInterrupt:
 		stop.put(1)
+	check_active_thread.join(2)
 	for ele in threads:
 		ele.join(2)
 	print "Ctrl+C happen"
