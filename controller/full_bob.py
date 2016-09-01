@@ -25,13 +25,14 @@ from Queue import *
 import math
 import pyupm_biss0001 as upmMotion
 
-# some global values
+# some global values 
 # Topic_prev = "arn:aws:sns:us-east-1:480370410475:"
 Topic = None
 Dev_ID = "BOB001"
 tableName = "Car_situation"
 S3_key = Dev_ID+'/inside.png'
 S3_bucket = "bobotry"
+
 danger_start = time.time()
 danger = Queue()
 
@@ -48,11 +49,11 @@ PIR_on = Queue()
 
 interval = 20 # 3min
 
-message_format = r'''{
-        "default": "Content",
-        "sms": "Content",
-        "GCM": "{ \"data\": { \"message\": \"Content\" } }"
-        }'''
+#message_format = r'''{
+#        "default": "Content",
+#        "sms": "Content",
+#        "GCM": "{ \"data\": { \"message\": \"Content\" } }"
+#        }'''
 
 def check_temperature(tempSensor):
 	i =0
