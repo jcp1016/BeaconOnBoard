@@ -5,7 +5,7 @@ xmlns:tools="http://schemas.android.com/tools"
 android:layout_width="match_parent"
 android:layout_height="match_parent"
 android:fitsSystemWindows="true"
-tools:context="com.example.qiansheng.full_bob.ImagePart"
+tools:context=".ImagePart"
 android:orientation="horizontal">
 
 <android.support.design.widget.AppBarLayout

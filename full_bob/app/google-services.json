@@ -1,20 +1,88 @@
+//{
+//  "project_info": {
+//    "project_number": "405033635176",
+//    "project_id": "firebase-bobo"
+//  },
+//  "client": [
+//    {
+//      "client_info": {
+//        "mobilesdk_app_id": "1:405033635176:android:ecf7bb61f54f2c9c",
+//        "android_client_info": {
+//          "package_name": "com.example.qiansheng.iot_bob"
+//        }
+//      },
+//      "oauth_client": [],
+//      "api_key": [
+//        {
+//          "current_key": "AIzaSyBVfcWKdDF4iIPbHqY-w6_NwfG7omXc5xM"
+//        }
+//      ],
+//      "services": {
+//        "analytics_service": {
+//          "status": 1
+//        },
+//        "appinvite_service": {
+//          "status": 1,
+//          "other_platform_oauth_client": []
+//        },
+//        "ads_service": {
+//          "status": 1
+//        }
+//      }
+//    },
+//    {
+//      "client_info": {
+//        "mobilesdk_app_id": "1:405033635176:android:7baabe2255ca5412",
+//        "android_client_info": {
+//          "package_name": "com.example.qiansheng.full_bob"
+//        }
+//      },
+//      "oauth_client": [],
+//      "api_key": [
+//        {
+//          "current_key": "AIzaSyBVfcWKdDF4iIPbHqY-w6_NwfG7omXc5xM"
+//        }
+//      ],
+//      "services": {
+//        "analytics_service": {
+//          "status": 1
+//        },
+//        "appinvite_service": {
+//          "status": 1,
+//          "other_platform_oauth_client": []
+//        },
+//        "ads_service": {
+//          "status": 1
+//        }
+//      }
+//    }
+//  ],
+//  "configuration_version": "1"
+//}
 {
   "project_info": {
-    "project_number": "405033635176",
-    "project_id": "firebase-bobo"
+    "project_number": "55872530724",
+    "firebase_url": "https://bobo-9bcea.firebaseio.com",
+    "project_id": "bobo-9bcea",
+    "storage_bucket": "bobo-9bcea.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:405033635176:android:ecf7bb61f54f2c9c",
+        "mobilesdk_app_id": "1:55872530724:android:c5838ca2938ea972",
         "android_client_info": {
-          "package_name": "com.example.qiansheng.iot_bob"
+          "package_name": "com.Sheng.qiansheng.full_bob"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "55872530724-co9ghq3rar46huro6evvev3sdc8eo3p4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyBVfcWKdDF4iIPbHqY-w6_NwfG7omXc5xM"
+          "current_key": "AIzaSyBF8PfpGCa7YBpSP6p11yA9a8QhIQJF9LM"
         }
       ],
       "services": {
@@ -26,33 +94,7 @@
           "other_platform_oauth_client": []
         },
         "ads_service": {
-          "status": 1
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:405033635176:android:7baabe2255ca5412",
-        "android_client_info": {
-          "package_name": "com.example.qiansheng.full_bob"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBVfcWKdDF4iIPbHqY-w6_NwfG7omXc5xM"
-        }
-      ],
-      "services": {
-        "analytics_service": {
-          "status": 1
-        },
-        "appinvite_service": {
-          "status": 1,
-          "other_platform_oauth_client": []
-        },
-        "ads_service": {
-          "status": 1
+          "status": 2
         }
       }
     }
