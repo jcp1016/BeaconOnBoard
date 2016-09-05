@@ -28,6 +28,8 @@ Topic = None
 Dev_ID = "BOB001"
 tableName = "Car_situation"
 device_act_table_name = "device_action"
+car_real_table_name = "car_situation_realtime"
+upload_table_name = "Dev_realtime"
 S3_key = Dev_ID+'/inside.png'
 S3_bucket = "bobotry"
 danger_start_queue = Queue()
@@ -46,6 +48,8 @@ active_queue = Queue()
 
 PIR_on = Queue()
 
+cam = cv2.VideoCapture(0)
+
 interval = 20 # 3min
 
 message_format = r'''{
@@ -53,6 +57,28 @@ message_format = r'''{
         "sms": "Content",
         "GCM": "{ \"data\": { \"message\": \"Content\" } }"
         }'''
+def check_upload(check_table, S3_client):
+	upload_checked = 0
+	while stop.empty():
+		upload_response = check_table.get_item(
+			Key = {
+			"DevNum": Dev_ID
+		})
+		if("Item" in upload_response):
+			if upload_response["Item"]["Upload"]==1:
+				upload_checked = 1
+				ret, frame = cam.read()
+				cv2.imwrite('realtime.png',frame)
+				S3_client.upload_file('realtime.png', S3_bucket, Dev_ID+"/realtime_inside.png")
+				response = check_table.put_item(
+					Item={
+					'DevNum': Dev_ID,
+					'Upload': 0,
+					'Finished': 1
+				})
+				time.sleep(1)
+		time.sleep(1)
+	return
 
 def check_active(active_table):
 	while stop.empty():
@@ -70,7 +96,7 @@ def check_active(active_table):
 		time.sleep(1)
 	return
 
-def check_temperature(tempSensor):
+def check_temperature(tempSensor, car_real_table):
 	i =0
 	danger_threshold = 10
 	safe_threshold = 10
@@ -78,6 +104,7 @@ def check_temperature(tempSensor):
 	safe_start = time.time()
 	temp_safe = 0
 	temp_danger = 0
+	real_time_sent = 0
 	while stop.empty():
 		if(active_queue.empty()):
 			print "=======reset========="
@@ -94,7 +121,15 @@ def check_temperature(tempSensor):
 		temperature = 1.0/(math.log(R/100000.0)/4275+1/298.15)-273.15
 		if i%20 == 0:
 			print temperature
-
+		if(time.time()>=real_time_sent+20):
+			real_time_sent=time.time()
+			response = car_real_table.put_item(
+				Item={
+				'DevNum': Dev_ID,
+				'start_time': int(real_time_sent*1000),
+				'temperature': int(get_temp(tempSensor)*10)
+				}
+			)
 		# if danger status happens, then only when the situation is safe for a time period, then the system thinks the danger status is solved
 
 		if temperature>24:
@@ -187,7 +222,7 @@ def somethingHasMoved(frame, threshold):
         return False
 
 def camera_motion(S3_client_2):
-	cam = cv2.VideoCapture(0)
+	#cam = cv2.VideoCapture(0)
 	s, img = cam.read()
 	num_moved = 0
 	started = time.time()
@@ -232,6 +267,8 @@ def main():
 
 	myTable = myResource.Table(tableName)
 	device_action_table = myResource.Table(device_act_table_name)
+	car_real_table = myResource.Table(car_real_table_name)
+	upload_real_table = myResource.Table(upload_table_name)
 	# dev_act_response = device_action_table.get_item(
 	# 	Key = {
 	# 		"DevNum": Dev_ID
@@ -283,7 +320,10 @@ def main():
 		check_active_thread = threading.Thread(target=check_active, args=(device_action_table,))
 		check_active.daemon=True
 		check_active_thread.start()
-		t1= threading.Thread(target=check_temperature, args=(tempSensor,))
+		upload_thread = threading.Thread(target=check_upload, args=(upload_real_table,S3_client,))
+		upload_thread.daemon=True
+		upload_thread.start()
+		t1= threading.Thread(target=check_temperature, args=(tempSensor,car_real_table,))
 		t1.daemon=True
 		threads.append(t1)
 		#t2= threading.Thread(target=check_deactivate, args=(switch,))
