@@ -38,6 +38,10 @@
             android:name=".bind_device"
             android:label="@string/app_name">
         </activity>
+        <activity
+            android:name=".RealTime"
+            android:label="@string/app_name">
+        </activity>
         <!-- [START gcm_receiver] -->
         <receiver
             android:name="com.google.android.gms.gcm.GcmReceiver"

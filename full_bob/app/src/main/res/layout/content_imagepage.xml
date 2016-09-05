@@ -45,9 +45,18 @@ tools:showIn="@layout/image_page">
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="?android:attr/textAppearanceLarge"
-                    android:text="BoB"
+                    android:text=" BoB  "
                     android:textSize="50dp"
-                    android:id="@+id/textView2" />
+                    android:id="@+id/textView2"
+                    android:layout_weight="0.39" />
+
+                <Button
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="Log out"
+                    android:id="@+id/button_logout"
+                    android:layout_weight="0.19" />
 
             </LinearLayout>
 
@@ -141,8 +150,8 @@ tools:showIn="@layout/image_page">
                     <Button
                         android:layout_width="fill_parent"
                         android:layout_height="wrap_content"
-                        android:text="Logout"
-                        android:id="@+id/button_logout"
+                        android:text="RealTime"
+                        android:id="@+id/button_realtime"
                         android:layout_weight="1" />
                 </LinearLayout>
 

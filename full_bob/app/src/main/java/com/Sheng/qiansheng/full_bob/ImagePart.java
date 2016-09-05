@@ -131,6 +131,21 @@ public class ImagePart extends Activity {
 //        System.out.println(signup_listener);
         button_bind.setOnClickListener(signup_listener);
 
+        Button button_realtime = (Button) findViewById(R.id.button_realtime);
+        final Intent act_realtime = new Intent(this,RealTime.class);
+        assert button_realtime != null;
+
+        View.OnClickListener realtime_listener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                startActivity(act_realtime);
+
+            }
+        };
+//        System.out.println(signup_listener);
+        button_realtime.setOnClickListener(realtime_listener);
+
         Button button_logout = (Button) findViewById(com.Sheng.qiansheng.full_bob.R.id.button_logout);
         final Intent act_main = new Intent(this,MainActivity.class);
         assert button_logout != null;
