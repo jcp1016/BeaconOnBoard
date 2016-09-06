@@ -134,7 +134,8 @@ def check_temperature(tempSensor, car_real_table):
 				'temperature': int(get_temp(tempSensor)*10)
 				}
 			)
-		# if danger status happens, then only when the situation is safe for a time period, then the system thinks the danger status is solved
+		# if danger status happens, then only when the situation is safe for a time period, 
+                # then the system thinks the danger status is solved
 
 		if temperature>24:
 			if temp_danger ==0:
@@ -253,7 +254,7 @@ def camera_motion(S3_client_2):
 	    # else:
 	    #  	num_moved = 0
 			total = total+1
-			if num_moved>=2:
+			if num_moved>=1:
 				s_up, img_up = cam.read()
 				cv2.imwrite('test.png',img_up)
 				S3_client_2.upload_file('test.png', S3_bucket, S3_key)
@@ -261,8 +262,8 @@ def camera_motion(S3_client_2):
 				if camera_motion_detection.empty():
 					camera_motion_detection.put(1)
 				return
-			elif total>=500:
-				return
+			#elif total>=500:
+			#	return
 	return
 
 def main():
@@ -300,9 +301,9 @@ def main():
 	# copy testimage.jpg as the default image if there is no inside car image uploaded
 	results = S3_client.list_objects(Bucket='bobotry2', Prefix=S3_key)
 	if 'Contents' in results:
-		print 'exist'
+		print 'Bucket exists'
 	else:
-		print 'no'
+		print 'No bucket'
 		S3_response = S3_client.copy_object(
 			Bucket='bobotry2',
 			CopySource='bobotry2/first/inside.png',
@@ -349,7 +350,7 @@ def main():
 						PIR_on.put(1)
 
 					if (not PIR_motion_detection.empty()) and camera_on.empty():
-                                                print "PIR sensor detected motion. Starting computer vision motion detection."
+                                                print "PIR sensor detected motion. Starting camera motion detection."
 						threads[1].join(1)
 						t3 = threading.Thread(target = camera_motion, args=(S3_client,))
 						t3.daemon=True
