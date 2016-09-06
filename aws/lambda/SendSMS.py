@@ -1,3 +1,12 @@
+#
+# SendSMS.py
+#
+# Desc: AWS Lambda function that publishes an SMS text to a topic.
+#       Triggered when mycar.jpg is uploaded to S3
+#
+# Author: Janet Prumachuk
+# Date:   August 2016
+#
 from __future__ import print_function
 import boto3
 
