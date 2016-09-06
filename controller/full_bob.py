@@ -393,6 +393,7 @@ def main():
 
 							warn_send = 1
 					else:
+						# change the time if you want
 						if(time.time()>=check_blocked+600 and not PIR_on.empty()):
 							active_queue.queue.clear()
 							time.sleep(1)
