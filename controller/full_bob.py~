@@ -350,7 +350,7 @@ def main():
 						PIR_on.put(1)
 
 					if (not PIR_motion_detection.empty()) and camera_on.empty():
-                                                print "PIR sensor detected motion. Starting computer vision motion detection."
+                                                print "PIR sensor detected motion. Starting camera motion detection."
 						threads[1].join(1)
 						t3 = threading.Thread(target = camera_motion, args=(S3_client,))
 						t3.daemon=True
@@ -375,7 +375,7 @@ def main():
 									if(not danger_start_queue.empty()):
 										danger_start = danger_start_queue.get()
 										danger_start_time = int(danger_start*1000)
-										print danger_start_time
+                                                                                print "Danger start time: " + danger_start_time
 										response = myTable.put_item(
 											Item={
 											'deviceID': Dev_ID,

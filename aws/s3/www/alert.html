@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+
+    <meta name="description" content="Review and act on alerts from your BoB device">
+    <meta name="author" content="Beacon on Board Team">
+
+    <link href="bootstrap.min.css" rel="stylesheet">
+    <link href="cover.css" rel="stylesheet">
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.5.5.min.js"></script>
+    <script src="jquery.min.js"></script>
+    <script src="bootstrap.min.js"></script>
+
+    <title>Beacon on Board</title>
+</head>
+<body class="bs-cover">
+
+    <div class="site-wrapper">
+
+      <div class="site-wrapper-inner">
+
+        <div class="cover-container" style="width: 80%;">
+
+          <div class="masthead clearfix">
+            <div class="inner cover">
+              <!--<h3 class="masthead-brand">Beacon on Board</h3> -->
+              <nav>
+                <ul class="nav masthead-nav">
+                  <!--
+                  <li class="active"><a href="#">Home</a></li>
+                  <li><a href="#">Features</a></li>
+                  <li><a href="#">Contact</a></li>
+                  -->
+                </ul>
+              </nav>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top: 10px;">
+            <div class="col-md-6">
+                <h3>Temperature inside car</h3>
+                <h1>120&deg;F</h1>
+            </div>
+            <div class="col-md-6">
+                <h3>Time since danger detected</h3>
+                <h1>12 minutes</h1>
+            </div>
+          </div>
+          <hr />
+          <div class="btn-group btn-group-justified btn-group-lg role="group" aria-label="...">
+              <div class="btn-group" role="group">
+                  <a href="#" id="dialBtn" class="btn btn-lg btn-danger">Call 911</a>
+              </div>
+              <div class="btn-group" role="group">
+                  <button type="button" id="alertBtn" class="btn btn-lg btn-info">
+                    Alarm
+                  </button>
+              </div>
+              <div class="btn-group" role="group">
+                  <button type="button" id="dismissBtn" class="btn btn-lg btn-success">
+                    Dismiss
+                  </button>
+              </div>
+          </div>
+          <br />
+          <!-- dialModal -->
+          <div class="modal" id="dialModal" role="dialog">
+              <div class="modal-dialog">
+                  <div class="modal-content">
+                      <div class="modal-header">
+                          <button type="button" class="close" data-dismiss="modal">&times;</button>
+                              <h4 class="modal-title" style="color=#333;">Simulation</h4>
+                      </div>
+                      <div class="modal-body" style="color=#333;">
+                          <p>Dials 911 if your device is a phone</p>
+                      </div>
+                      <div class="modal-footer">
+                          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          <!-- alertModal -->
+          <div class="modal" id="alertModal" role="dialog">
+              <div class="modal-dialog">
+                  <div class="modal-content">
+                      <div class="modal-header">
+                          <button type="button" class="close" data-dismiss="modal">&times;</button>
+                              <h4 class="modal-title" style="color=#333;">Sent Signal to BoB</h4>
+                      </div>
+                      <div class="modal-body" style="color=#333;">
+                          <p>Emits flashing light and sound to alert anyone near the car</p>
+                      </div>
+                      <div class="modal-footer">
+                          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          <!-- dismissModal -->
+          <div class="modal" id="dismissModal" role="dialog">
+              <div class="modal-dialog">
+                  <div class="modal-content">
+                      <div class="modal-header">
+                          <button type="button" class="close" data-dismiss="modal">&times;</button>
+                              <h4 class="modal-title" style="color=#333;">Alert Dismissed</h4>
+                      </div>
+                      <div class="modal-body" style="color=#333;">
+                          <p>Resets BoB and records false positive to improve the detection model</p>
+                      </div>
+                      <div class="modal-footer">
+                          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          <br />
+          <img src="mycar.png" class="img-responsive" alt="car interior" width="640" height="480">
+          <br />
+          <div class="mastfoot">
+            <div class="inner">
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+    $(document).ready(function(){
+
+        AWS.config.region = 'us-east-1'; 
+        AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+          IdentityPoolId: 'us-east-1:8cab00fa-65c2-4dab-8f39-6a73a4a2cee3',
+        });
+
+        AWS.config.credentials.get(function(){
+          var accessKeyId = AWS.config.credentials.accessKeyId;
+          var secretAccessKey = AWS.config.credentials.secretAccessKey;
+          var sessionToken = AWS.config.credentials.sessionToken;
+        });
+
+        var identityId = AWS.config.credentials.identityId;
+        var dynamodb   = new AWS.DynamoDB({region: 'us-east-1'});
+
+        $("#dialBtn").click(function(){
+            $("#dialModal").modal('show');
+        });
+
+        $("#alertBtn").click(function(){
+            $("#alertModal").modal('show');
+        });
+        $("#dismissBtn").click(function(){
+            var params = {
+                TableName: "device_action",
+                Item: {
+                   "DevNum":"BOB001",
+                   "active": 0
+                }
+             };
+             var docClient = new AWS.DynamoDB.DocumentClient({region: 'us-east-1'});
+
+             docClient.put(params, function(err, data) {
+                 if (err)
+                     console.log(JSON.stringify(err, null, 2));
+                 else
+                     console.log(JSON.stringify(data, null, 2));
+             });
+
+             $("#dismissModal").modal('show');
+        });
+    });
+    </script>
+</body>
+</html>

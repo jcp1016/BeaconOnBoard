@@ -375,7 +375,7 @@ def main():
 									if(not danger_start_queue.empty()):
 										danger_start = danger_start_queue.get()
 										danger_start_time = int(danger_start*1000)
-										print danger_start_time
+                                                                                print "Danger start time: " + str(danger_start_time)
 										response = myTable.put_item(
 											Item={
 											'deviceID': Dev_ID,
