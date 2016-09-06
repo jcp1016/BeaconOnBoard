@@ -17,7 +17,7 @@ COGNITO_ID = "BOBO"
 
 def getCredentials():
 	# Get AWS account related details
-	with open('/home/root/BOB/config.txt', 'rb') as configfile:
+	with open('/home/root/BeaconOnBoard/controller/config.txt', 'rb') as configfile:
 		ACCOUNT_ID,IDENTITY_POOL_ID,ROLE_ARN = configfile.read().splitlines()
 		configfile.close()
 		print ACCOUNT_ID

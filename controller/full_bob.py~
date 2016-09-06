@@ -60,6 +60,7 @@ message_format = r'''{
         "sms": "Content",
         "GCM": "{ \"data\": { \"message\": \"Content\" } }"
         }'''
+
 def check_upload(check_table, S3_client):
 	upload_checked = 0
 	while stop.empty():
@@ -153,12 +154,12 @@ def check_temperature(tempSensor, car_real_table):
 					danger_start_queue.queue.clear()
 					danger_start_queue.put(danger_start)
 					danger.put(1)
-					print "danger put: "+str(temperature)
+					print "Danger, temperature is: "+str(temperature)
 		if temp_safe:
 			if time.time()-safe_start>safe_threshold:
 				temp_danger = 0
 				danger_start = time.time()
-				print "safe"
+				print "Temperature is safe"
 		time.sleep(0.5)
 
 
@@ -169,9 +170,9 @@ def get_temp(tempSensor):
 	R=0
 	R = tempSensor.read()
 	time.sleep(0.01)
-	print R
+	#print R
 	R = 1023.0/R-1
-	print R
+	#print R
 	R=100000.0*R
 	temperature = 1.0/(math.log(R/100000.0)/4275+1/298.15)-273.15
 	return round(temperature,1)
@@ -183,9 +184,9 @@ def PIR_motion(motion_sensor):
 		if motion_sensor.value():
 		#if motion_sensor.read():
 			detected = detected+1
-			print "detected: "+ str(detected)
+			print "PIR detected: "+ str(detected)
 		else:
-			print "nothing"
+			print "PIR detected nothing"
 		total = total+1
 		time.sleep(0.1)
 		if (detected>=3):
@@ -256,12 +257,11 @@ def camera_motion(S3_client_2):
 				s_up, img_up = cam.read()
 				cv2.imwrite('test.png',img_up)
 				S3_client_2.upload_file('test.png', S3_bucket, S3_key)
-                                S3_client_2.upload_file('test.png', S3w_bucket, 'www/mycar.png')
 				print "file uploaded"
 				if camera_motion_detection.empty():
 					camera_motion_detection.put(1)
 				return
-			elif total>=200:
+			elif total>=500:
 				return
 	return
 
@@ -335,11 +335,12 @@ def main():
 		#threads.append(t2)
 		for ele in threads:
 			ele.start()
+		print "=======started========"
 		while stop.empty():
 			if not active_queue.empty():
-				print "=======started========"
 				if not danger.empty() and time.time() - time_prev > interval:
 					if PIR_on.empty():
+                                                print "Heat detected.  Starting motion detection."
 						#t2 = threading.Thread(target = PIR_motion, args=(switch,))
 						t2 = threading.Thread(target = PIR_motion, args=(myMotion,))
 						t2.daemon=True
@@ -348,6 +349,7 @@ def main():
 						PIR_on.put(1)
 
 					if (not PIR_motion_detection.empty()) and camera_on.empty():
+                                                print "PIR sensor detected motion. Starting computer vision motion detection."
 						threads[1].join(1)
 						t3 = threading.Thread(target = camera_motion, args=(S3_client,))
 						t3.daemon=True
@@ -356,7 +358,11 @@ def main():
 						camera_on.put(1)
 					if (not PIR_motion_detection.empty()) and (not camera_motion_detection.empty()):
 						if ( not warn_send):
-							print "gonna send the temperature: "+str(warn_send)
+                                                        print "Motion detected.  Uploading image."
+							#print "gonna send the temperature: "+str(warn_send)
+                                                        S3_client.meta.client.upload_file('test.png', S3w_bucket, 'www/mycar.png',
+                                                                {'ACL':'public-read','ContentType':'image/png'})
+
 							threads[1].join(1)
 							del threads[1]
 							if(Topic!=None):
@@ -406,7 +412,7 @@ def main():
 	check_active_thread.join(2)
 	for ele in threads:
 		ele.join(2)
-	print "Ctrl+C happen"
+	print "Ctrl+C happened"
 	exit()
 	return
 
