@@ -317,6 +317,7 @@ def main():
 	time_prev=0
 	threads=[]
 	try:
+		check_blocked = time.time()
 		check_active_thread = threading.Thread(target=check_active, args=(device_action_table,))
 		check_active.daemon=True
 		check_active_thread.start()
@@ -336,6 +337,7 @@ def main():
 				print "=======started========"
 				if not danger.empty() and time.time() - time_prev > interval:
 					if PIR_on.empty():
+						check_blocked = time.time()
 						#t2 = threading.Thread(target = PIR_motion, args=(switch,))
 						t2 = threading.Thread(target = PIR_motion, args=(myMotion,))
 						t2.daemon=True
@@ -380,6 +382,23 @@ def main():
 								pub = client.publish( TopicArn = Topic, Message =  send_message, MessageStructure='json')
 
 							warn_send = 1
+					else:
+						if(time.time()>=check_blocked+600 and not PIR_on.empty()):
+							active_queue.queue.clear()
+							time.sleep(1)
+							for ele in threads[1:]:
+								ele.join(2)
+							threads = [threads[0]]
+							if active_queue.empty():
+								active_queue.put(1)
+							print "---------block reset---------"
+							check_blocked=time.time()
+							danger.queue.clear()
+							camera_on.queue.clear()
+							PIR_on.queue.clear()
+							PIR_motion_detection.queue.clear()
+							camera_motion_detection.queue.clear()
+							warn_send=0
 					#time_prev = time.time()
 
 				# how about the system status after the publishing???
