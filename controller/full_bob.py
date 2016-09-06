@@ -356,7 +356,7 @@ def main():
 							threads[1].join(1)
 							del threads[1]
 							if(Topic!=None):
-								message = "Baby in the Car!!! Temperature: "+ str(get_temp(tempSensor))+"\u2103"+"!!!"
+								#message = "Baby in the Car!!! Temperature: "+ str(get_temp(tempSensor)*1.8+32)+"\u2109"+"!!! Danger start time: "
 								try:
 									print "=================="
 									
@@ -372,6 +372,7 @@ def main():
 											'temperature': int(get_temp(tempSensor)*10)
 											}
 										)
+										message = "Baby in the Car!!! Temperature: "+ str(get_temp(tempSensor)*1.8+32)+"\u2109"+"!!! Danger start time: "+str(datetime.fromtimestamp(danger_start-3600*4).strftime('%Y-%m-%d %H:%M:%S'))
 								except Exception as e_db:
 									print str(e_db)
 									stop.put(1)
