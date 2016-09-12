@@ -155,7 +155,7 @@
             }
         };
         function pollDB() {
-          docClient.get(params, function(err, data) {
+        docClient.get(params, function(err, data) {
             if (err)
                 console.log(JSON.stringify(err, null, 2));
             else
@@ -168,7 +168,7 @@
                 var curr_temp = Math.round(data.Item.temperature/10 * 9/5 + 32);
                 $("#ctemp").text(curr_temp);
                 console.log(curr_temp);
-          });
+        });
         }
         pollDB();
         window.setInterval(pollDB, 20000);
