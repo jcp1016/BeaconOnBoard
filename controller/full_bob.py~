@@ -322,6 +322,7 @@ def main():
 	time_prev=0
 	threads=[]
 	try:
+		check_blocked = time.time()
 		check_active_thread = threading.Thread(target=check_active, args=(device_action_table,))
 		check_active.daemon=True
 		check_active_thread.start()
@@ -341,7 +342,7 @@ def main():
 			if not active_queue.empty():
 				if not danger.empty() and time.time() - time_prev > interval:
 					if PIR_on.empty():
-                                                print "Heat detected.  Starting motion detection."
+						check_blocked = time.time()
 						#t2 = threading.Thread(target = PIR_motion, args=(switch,))
 						t2 = threading.Thread(target = PIR_motion, args=(myMotion,))
 						t2.daemon=True
@@ -361,13 +362,13 @@ def main():
 						if ( not warn_send):
                                                         print "Motion detected.  Uploading image."
 							#print "gonna send the temperature: "+str(warn_send)
-                                                        S3_client.upload_file('test.png', S3w_bucket, 'www/mycar.png',
+                                                         S3_client.upload_file('test.png', S3w_bucket, 'www/mycar.png',
                                                                 {'ACL':'public-read','ContentType':'image/png'})
 
 							threads[1].join(1)
 							del threads[1]
 							if(Topic!=None):
-								message = "Baby in the Car!!! Temperature: "+ str(get_temp(tempSensor))+"\u2103"+"!!!"
+								#message = "Baby in the Car!!! Temperature: "+ str(get_temp(tempSensor)*1.8+32)+"\u2109"+"!!! Danger start time: "
 								try:
 									print "=================="
 									
@@ -375,7 +376,7 @@ def main():
 									if(not danger_start_queue.empty()):
 										danger_start = danger_start_queue.get()
 										danger_start_time = int(danger_start*1000)
-                                                                                print "Danger start time: " + danger_start_time
+                                                                                print "Danger start time: " + str(danger_start_time)
 										response = myTable.put_item(
 											Item={
 											'deviceID': Dev_ID,
@@ -383,6 +384,7 @@ def main():
 											'temperature': int(get_temp(tempSensor)*10)
 											}
 										)
+										message = "Baby in the Car!!! Temperature: "+ str(get_temp(tempSensor)*1.8+32)+"\u2109"+"!!! Danger start time: "+str(datetime.fromtimestamp(danger_start-3600*4).strftime('%Y-%m-%d %H:%M:%S'))
 								except Exception as e_db:
 									print str(e_db)
 									stop.put(1)
@@ -390,12 +392,25 @@ def main():
 								pub = client.publish( TopicArn = Topic, Message =  send_message, MessageStructure='json')
 
 							warn_send = 1
+					else:
+						# change the time if you want
+						if(time.time()>=check_blocked+600 and not PIR_on.empty()):
+							active_queue.queue.clear()
+							time.sleep(1)
+							for ele in threads[1:]:
+								ele.join(2)
+							threads = [threads[0]]
+							if active_queue.empty():
+								active_queue.put(1)
+							print "---------block reset---------"
+							check_blocked=time.time()
+							danger.queue.clear()
+							camera_on.queue.clear()
+							PIR_on.queue.clear()
+							PIR_motion_detection.queue.clear()
+							camera_motion_detection.queue.clear()
+							warn_send=0
 					#time_prev = time.time()
-
-				# how about the system status after the publishing???
-				# if not deactivate.empty():
-				# 	danger.get()
-				# 	deactivate.get()
 			else:
 				print "=======stopped========"
 				for ele in threads[1:]:
@@ -406,7 +421,11 @@ def main():
 				PIR_on.queue.clear()
 				PIR_motion_detection.queue.clear()
 				camera_motion_detection.queue.clear()
-				warn_send=0
+				warn_send=0	
+				# how about the system status after the publishing???
+				# if not deactivate.empty():
+				# 	danger.get()
+				# 	deactivate.get()
 			time.sleep(0.5)
 	except KeyboardInterrupt:
 		stop.put(1)

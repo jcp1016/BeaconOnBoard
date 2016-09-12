@@ -47,7 +47,7 @@
             </div>
             <div class="col-md-6">
                 <h3>Time since danger detected</h3>
-                <h1><span id=etime>12</span> minutes</h1>
+                <h1><span id=etime>12 minutes</span></h1>
             </div>
           </div>
           <hr />
@@ -156,22 +156,28 @@
         };
         function pollDB() {
           docClient.get(params, function(err, data) {
-            if (err)
+            if (err) {
                 console.log(JSON.stringify(err, null, 2));
-            else
-                var s = data.Item.start_time;
+            } else {
+                var st = data.Item.start_time;
+                console.log(st);
                 var d = new Date();
                 var n = d.getTime();
-                var elapsed_minutes = Math.round((n-s)/1000/60);
-                $("#etime").text(elapsed_minutes);
-                console.log(elapsed_minutes);
+                var emins = Math.round((n-st)/1000/60);
+                if (emins >= 1) {
+                    $("#etime").text(emins + " minutes");
+                } else {
+                    var esecs = Math.round((n-st)/1000 % 60);
+                    $("#etime").text(esecs + " seconds");
+                }
                 var curr_temp = Math.round(data.Item.temperature/10 * 9/5 + 32);
                 $("#ctemp").text(curr_temp);
                 console.log(curr_temp);
+          }
           });
         }
         pollDB();
-        window.setInterval(pollDB, 20000);
+        window.setInterval(pollDB, 5000);
 
         $("#dialBtn").click(function(){
             $("#dialModal").modal('show');

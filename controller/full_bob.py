@@ -360,9 +360,9 @@ def main():
 						camera_on.put(1)
 					if (not PIR_motion_detection.empty()) and (not camera_motion_detection.empty()):
 						if ( not warn_send):
-                            print "Motion detected.  Uploading image."
+                                                        print "Motion detected.  Uploading image."
 							#print "gonna send the temperature: "+str(warn_send)
-                            S3_client.upload_file('test.png', S3w_bucket, 'www/mycar.png',
+                                                        S3_client.upload_file('test.png', S3w_bucket, 'www/mycar.png',
                                                                 {'ACL':'public-read','ContentType':'image/png'})
 
 							threads[1].join(1)
