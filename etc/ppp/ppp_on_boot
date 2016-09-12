@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+#   Rename this file to ppp_on_boot and pppd will be fired up as
+#   soon as the system comes up, connecting to `provider'.
+#
+#   If you also make this file executable, and replace the first line
+#   with just "#!/bin/sh", the commands below will be executed instead.
+#
+
+# The location of the ppp daemon itself (shouldn't need to be changed)
+killall pppd
+sleep 5
+rm /home/root/BeaconOnBoard/logs/*
+python /home/root/BeaconOnBoard/controller/attach_gprs.py
+sleep 20
+PPPD=/usr/sbin/pppd
+
+# pppd looks for provider-simple in /etc/ppp/peers/
+nohup $PPPD call provider-simple &
+sleep 20
+python /home/root/BeaconOnBoard/controller/startup_mailer.py
+
+# Additional connections, which would just use settings from
+# /etc/ppp/options.<tty>
+#$PPPD ttyS0
+#$PPPD ttyS1
+#$PPPD ttyS2
+#$PPPD ttyS3
+exit 0

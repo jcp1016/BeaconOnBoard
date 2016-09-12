@@ -43,17 +43,18 @@
           <div class="row" style="margin-top: 10px;">
             <div class="col-md-6">
                 <h3>Temperature inside car</h3>
-                <h1>120&deg;F</h1>
+                <h1><span id=ctemp>120</span>&deg;F</h1>
             </div>
             <div class="col-md-6">
                 <h3>Time since danger detected</h3>
-                <h1>12 minutes</h1>
+                <h1><span id=etime>12</span> minutes</h1>
             </div>
           </div>
           <hr />
           <div class="btn-group btn-group-justified btn-group-lg role="group" aria-label="...">
               <div class="btn-group" role="group">
-                  <a href="#" id="dialBtn" class="btn btn-lg btn-danger">Call 911</a>
+                  <!--<a href="#" id="dialBtn" class="btn btn-lg btn-danger">Call 911</a>-->
+                  <button type="button" id="dialBtn" class="btn btn-lg btn-danger">Call 911</button>
               </div>
               <div class="btn-group" role="group">
                   <button type="button" id="alertBtn" class="btn btn-lg btn-info">
@@ -146,6 +147,31 @@
 
         var identityId = AWS.config.credentials.identityId;
         var dynamodb   = new AWS.DynamoDB({region: 'us-east-1'});
+        var docClient = new AWS.DynamoDB.DocumentClient({region: 'us-east-1'});
+        var params = {
+            TableName : "car_situation_realtime",
+            Key: {
+                "DevNum": "BOB001"
+            }
+        };
+        function pollDB() {
+        docClient.get(params, function(err, data) {
+            if (err)
+                console.log(JSON.stringify(err, null, 2));
+            else
+                var s = data.Item.start_time;
+                var d = new Date();
+                var n = d.getTime();
+                var elapsed_minutes = Math.round((n-s)/1000/60);
+                $("#etime").text(elapsed_minutes);
+                console.log(elapsed_minutes);
+                var curr_temp = Math.round(data.Item.temperature/10 * 9/5 + 32);
+                $("#ctemp").text(curr_temp);
+                console.log(curr_temp);
+        });
+        }
+        pollDB();
+        window.setInterval(pollDB, 20000);
 
         $("#dialBtn").click(function(){
             $("#dialModal").modal('show');
@@ -155,23 +181,40 @@
             $("#alertModal").modal('show');
         });
         $("#dismissBtn").click(function(){
-            var params = {
-                TableName: "device_action",
-                Item: {
-                   "DevNum":"BOB001",
-                   "active": 0
-                }
-             };
-             var docClient = new AWS.DynamoDB.DocumentClient({region: 'us-east-1'});
-
-             docClient.put(params, function(err, data) {
-                 if (err)
-                     console.log(JSON.stringify(err, null, 2));
-                 else
-                     console.log(JSON.stringify(data, null, 2));
-             });
-
-             $("#dismissModal").modal('show');
+            var docClient = new AWS.DynamoDB.DocumentClient({region: 'us-east-1'});
+            if ($(this).text() == "Dismiss") {
+                var params = {
+                    TableName: "device_action",
+                    Item: {
+                       "DevNum":"BOB001",
+                       "active": 0
+                    } 
+                 };
+                 docClient.put(params, function(err, data) {
+                     if (err)
+                         console.log(JSON.stringify(err, null, 2));
+                     else
+                         console.log(JSON.stringify(data, null, 2));
+                 });
+                 $("#dismissModal").modal('show');
+                 $(this).text("Activate");
+            } else {
+                var params = {
+                    TableName: "device_action",
+                    Item: {
+                       "DevNum":"BOB001",
+                       "active": 1
+                    } 
+                 };
+                 docClient.put(params, function(err, data) {
+                     if (err)
+                         console.log(JSON.stringify(err, null, 2));
+                     else
+                         console.log(JSON.stringify(data, null, 2));
+                 });
+                 $("#dismissModal").modal('show');
+                 $(this).text("Dismiss");
+            }
         });
     });
     </script>

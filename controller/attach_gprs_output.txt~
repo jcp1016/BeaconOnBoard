@@ -1,0 +1,92 @@
+ATZ
+
+OK
+
+AT+CGACT=0,1
+ERROR
+
+AT+CGATT=0
+OK
+
+AT+CMEE=2
+OK
+
+AT+CPIN?
+
++CPIN: READY
+
+OK
+
+AT+CGREG?
++CGREG: 1,0
+
+OK
+
+AT+COPS?
++COPS: 
+0,0,"T-Mobile"
+
+OK
+
+AT+CSQ
++CSQ: 10,0
+
+OK
+
+AT+CGDCONT=1,"","fast.t-mobile.com"
+OK
+
+AT+CGATT=1
+
+OK
+
++CGREG: 1
+
+ATD*99***1#
+CONNECT
+
+Now run pppd call provider-simple
+Exiting
+
+root@jcp-edison:~/BeaconOnBoard/controller# pppd call provider-simple &
+[1] 1800
+root@jcp-edison:~/BeaconOnBoard/controller# Serial connection established.
+Using interface ppp0
+Connect: ppp0 <--> /dev/pts/0
+Remote message: Login OK
+PAP authentication succeeded
+replacing old default route to wlan0 [10.0.1.1]
+local  IP address 6.169.24.27
+remote IP address 192.200.1.21
+primary   DNS address 10.177.0.34
+secondary DNS address 10.177.0.210
+
+root@jcp-edison:~/BeaconOnBoard/controller# ip a 
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue 
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: sit0: <NOARP> mtu 1480 qdisc noop 
+    link/sit 0.0.0.0 brd 0.0.0.0
+3: wlan0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast qlen 1000
+    link/ether fc:c2:de:3b:cf:e8 brd ff:ff:ff:ff:ff:ff
+    inet 10.0.1.7/24 brd 10.0.1.255 scope global wlan0
+       valid_lft forever preferred_lft forever
+4: usb0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc pfifo_fast qlen 1000
+    link/ether 02:00:86:1d:47:da brd ff:ff:ff:ff:ff:ff
+    inet 192.168.2.15/24 brd 192.168.2.255 scope global usb0
+       valid_lft forever preferred_lft forever
+25: ppp0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast qlen 3
+    link/ppp 
+    inet 6.169.24.27 peer 192.200.1.21/32 scope global ppp0
+       valid_lft forever preferred_lft forever
+
+root@jcp-edison:~/BeaconOnBoard/controller# route
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+default         *               0.0.0.0         U     0      0        0 ppp0
+10.0.1.0        *               255.255.255.0   U     0      0        0 wlan0
+192.168.2.0     *               255.255.255.0   U     0      0        0 usb0
+192.200.1.21    *               255.255.255.255 UH    0      0        0 ppp0
